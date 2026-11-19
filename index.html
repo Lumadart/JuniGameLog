@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Junigami · Diário de um jogador</title>
+<meta name="description" content="Resenhas sinceras de um jogador apaixonado: notas, opiniões e listas dos jogos que passaram pelo controle.">
+<meta name="theme-color" content="#0a0a0e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Junigami · Diário de um jogador">
+<meta property="og:description" content="Resenhas sinceras de um jogador apaixonado.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+/* aplica o último tema salvo antes de pintar a página (evita "piscar" de cor) */
+(function(){try{
+  var t=JSON.parse(localStorage.getItem('junigami:tema')||'null'), ok=/^#[0-9a-f]{6}$/i;
+  if(t&&ok.test(t.acc)&&ok.test(t.acc2)){
+    var lum=function(h){var c=[1,3,5].map(function(i){var v=parseInt(h.substr(i,2),16)/255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+    var s=document.documentElement.style;
+    s.setProperty('--acc',t.acc);s.setProperty('--acc2',t.acc2);
+    s.setProperty('--on-acc',lum(t.acc)>.38?'#0a0a0e':'#fff');s.setProperty('--on-acc2',lum(t.acc2)>.38?'#0a0a0e':'#fff');
+  }
+}catch(e){}})();
+</script>
+</head>
+<body>
+<div id="demo-bar" class="demo-bar hide"></div>
+<header class="top" id="header"></header>
+<main id="app" tabindex="-1"><div class="state"><div class="spin"></div><p>Carregando...</p></div></main>
+<footer class="foot" id="footer"></footer>
+
+<div class="lb hide" id="lb" role="dialog" aria-modal="true" aria-label="Galeria">
+  <button class="lb-x" id="lbX" aria-label="Fechar">×</button>
+  <button class="lb-n lb-p" id="lbP" aria-label="Anterior">‹</button>
+  <img id="lbImg" alt="" referrerpolicy="no-referrer">
+  <button class="lb-n" id="lbN" aria-label="Próxima">›</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<noscript><p style="padding:40px;text-align:center">Este site precisa de JavaScript para carregar as resenhas.</p></noscript>
+<script src="config.js"></script>
+<script src="demo-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
