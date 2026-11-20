@@ -558,16 +558,16 @@
     b.appendChild(sp); setTimeout(() => sp.remove(), 700);
   });
   /* rolagem: barra de progresso, cabeçalho compacto, voltar ao topo, parallax */
-  let ticking = false;
+  let ticking = false; const progEl = $('#progress i');
   function onScroll() {
     if (ticking) return; ticking = true;
     requestAnimationFrame(() => {
       ticking = false;
       const y = window.scrollY, h = document.documentElement.scrollHeight - innerHeight;
-      $('#progress').style.setProperty('--sp', h > 0 ? Math.min(1, y / h).toFixed(4) : 0);
+      progEl.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, y / h).toFixed(4) : 0) + ')';
       $('#header').classList.toggle('scrolled', y > 12);
       $('#toTop').classList.toggle('show', y > 600);
-      if (!REDUCED) { const bg = app.querySelector('.hero-bg'); if (bg && y < 1400) bg.style.setProperty('--py', (y * .14).toFixed(1) + 'px'); }
+      if (!REDUCED) { const bg = app.querySelector('.hero-bg'); if (bg && y < 1400) bg.style.translate = '0 ' + (y * .14).toFixed(1) + 'px'; }
     });
   }
   window.addEventListener('scroll', onScroll, { passive: true });
