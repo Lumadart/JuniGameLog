@@ -189,13 +189,13 @@
     return `<div class="rail-wrap"><button class="rail-btn l" data-rail="-1" aria-label="Anterior">${ic('chl')}</button><div class="rail">${list.map((j, i) => gcard(j, rank ? { rank: i + 1 } : {})).join('')}</div><button class="rail-btn r" data-rail="1" aria-label="Próximo">${ic('chr')}</button></div>`;
   }
   function rcard(j) {
-    return `<a class="rcard" href="${lnk(j)}"><div class="rc-img">${pic(j.screenshots[0] || j.capa, j.titulo)}${hasScore(j) ? `<span class="sbadge">${nota(j.notas.final)}</span>` : ''}<h3>${esc(j.titulo)}</h3></div>
+    return `<a class="rcard" href="${lnk(j)}"><div class="rc-img">${pic(j.capa || j.screenshots[0], j.titulo)}${hasScore(j) ? `<span class="sbadge">${nota(j.notas.final)}</span>` : ''}<h3>${esc(j.titulo)}</h3></div>
       <div class="rc-body"><div class="rc-meta"><span>${esc(j.generos.slice(0, 2).join(' / '))}</span><span>${ic('cal')}${esc(fdata(j.data))}</span></div><p>${esc(exc(j, 95))}</p><span class="rc-link">Ler resenha ${ic('arr')}</span></div></a>`;
   }
   function row(j, o) {
     o = o || {};
     const sc = j.notas.final;
-    return `<a class="row" href="${lnk(j)}">${o.rank ? `<span class="rowrank">${o.rank}</span>` : ''}${pic(j.screenshots[0] || j.capa, j.titulo, 'rimg')}
+    return `<a class="row" href="${lnk(j)}">${o.rank ? `<span class="rowrank">${o.rank}</span>` : ''}${pic(j.capa || j.screenshots[0], j.titulo, 'rimg')}
       <div class="rbody"><h3>${esc(j.titulo)}</h3><p>${esc(exc(j, 150))}</p>
       <div class="rmeta">${j.plataformas.length ? `<span>${ic('monitor')}${esc(j.plataformas.slice(0, 3).join(', '))}</span>` : ''}${j.tempoJogo != null ? `<span>${ic('clock')}${fnum(j.tempoJogo)}h</span>` : ''}${j.data ? `<span>${ic('cal')}${esc(fdata(j.data))}</span>` : ''}${chip(j.status)}</div></div>
       <div class="rscore">${sc != null ? `${cnt(sc)}<small>/10</small>` : ''}</div></a>`;
@@ -299,10 +299,10 @@
     const fin = all.filter(finished).sort(byDate).slice(0, 16);
     const top10 = all.filter(j => j.top10).sort((a, b) => a.top10 - b.top10).slice(0, 10);
     const gens = genreStats().slice(0, 7);
-    const bg = feat.screenshots[0] || safeUrl(feat.capa);
+    const featCapa = safeUrl(feat.capa), bg = featCapa || feat.screenshots[0];
 
     let html = `<div class="wrap">
-      <section class="hero">${bg ? `<img class="hero-bg${feat.screenshots[0] ? '' : ' soft'}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
+      <section class="hero">${bg ? `<img class="hero-bg${featCapa ? ' soft' : ''}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
         <div class="hero-l"><span class="tag-feat">${feat.destaque ? 'Resenha em destaque' : hasReview(feat) ? 'Última resenha' : 'Em destaque'}</span>
           <h1>${esc(feat.titulo)}</h1>${feat.subtitulo ? `<div class="sub">${esc(feat.subtitulo)}</div>` : ''}
           <p>${esc(exc({ sinopse: feat.sinopse }, 190))}</p>

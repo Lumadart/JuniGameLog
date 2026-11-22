@@ -148,7 +148,7 @@ html.no-fx .bar{width:var(--w);transition:none}
 /* ===================== HERO (início) ===================== */
 .hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--r);margin-top:24px;background:var(--panel);display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:380px}
 .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;translate:0 var(--py,0px);scale:1.08;animation:kb 24s ease-in-out infinite alternate}
-.hero-bg.soft{filter:blur(12px);opacity:.4}
+.hero-bg.soft{filter:blur(3px);opacity:.65}
 @keyframes kb{from{scale:1.06}to{scale:1.18}}
 .hero-fade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,14,.96) 0%,rgba(10,10,14,.7) 45%,rgba(10,10,14,.15) 100%)}
 .hero-l{position:relative;padding:44px 40px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:6px}
