@@ -397,14 +397,15 @@
     const capaUrl = safeUrl(j.capa);
     const sc = hasScore(j), quero = isQuero(j);
     const meta = [];
-    if (j.generos.length || j.classificacao) meta.push(`<li>${ic('gamepad')}<span class="gen">${j.generos.map(g => `<a href="#/genero/${enc(g)}">${esc(g)}</a>`).join('<i class="sl">/</i>')}</span>${j.classificacao ? `<span class="cbadge" title="Classificação indicativa" style="--c:${CLASS_COLORS[j.classificacao] || '#999'}">${esc(j.classificacao)}</span>` : ''}</li>`);
-    if (j.lancamento) meta.push(`<li>${ic('cal')}<span>${esc(flanc(j.lancamento))}</span></li>`);
+    if (j.generos.length) meta.push(`<li>${ic('gamepad')}<span class="gen">${j.generos.map(g => `<a href="#/genero/${enc(g)}">${esc(g)}</a>`).join('<i class="sl">/</i>')}</span></li>`);
+    if (j.lancamento) meta.push(`<li>${ic('cal')}<span class="lab">Lançamento:</span> <b>${esc(String(j.lancamento).slice(0, 4))}</b></li>`);
     if (j.desenvolvedora) meta.push(`<li>${ic('code')}<span class="lab">Desenvolvedora:</span> <b>${esc(j.desenvolvedora)}</b></li>`);
     if (j.plataformas.length) meta.push(`<li class="plats">${ic('monitor')}<span class="lab">Plataformas:</span> ${platsHtml(j.plataformas)}</li>`);
 
     const RC = { 'Sim': 'rc-Sim', 'Talvez': 'rc-Talvez', 'Não': 'rc-Nao', 'Nunca': 'rc-Nunca', 'Nem morto': 'rc-Nem-morto' };
     const stxt = s => s ? `<span style="color:${STATUS_COLORS[s] || 'inherit'}">${esc(s)}</span>` : '';
-    const stats = [['Status', stxt(j.status)], ['Tempo de jogo', j.tempoJogo != null ? fnum(j.tempoJogo) + ' horas' : ''], ['Dificuldade', esc(j.dificuldade)], ['Replay', esc(j.replay)],
+    const clsf = j.classificacao ? `<span class="cbadge" title="Classificação indicativa" style="--c:${CLASS_COLORS[j.classificacao] || '#999'}">${esc(j.classificacao)}</span>` : '';
+    const stats = [['Status', stxt(j.status)], ['Classificação', clsf], ['Tempo de jogo', j.tempoJogo != null ? fnum(j.tempoJogo) + ' horas' : ''], ['Dificuldade', esc(j.dificuldade)], ['Replay', esc(j.replay)],
       ['Recomendo', j.recomendo ? `<span class="${RC[j.recomendo] || ''}">${esc(j.recomendo)}</span>` : '']];
     const shots = j.screenshots;
     const related = J().filter(x => x.id !== j.id && !isQuero(x) && x.generos.some(g => j.generos.includes(g))).sort(SORT.nota).slice(0, 5);
