@@ -393,8 +393,8 @@
     const j = J().find(x => String(x.id) === String(id));
     if (!j) { setMeta('Não encontrado'); app.innerHTML = emptyBtn('Jogo não encontrado', 'Esse jogo não existe (ou foi removido).', '#/resenhas', 'Ver resenhas'); return; }
     setMeta(j.titulo, exc(j, 150));
-    const bg = j.screenshots[0] || safeUrl(j.capa);
     const capaUrl = safeUrl(j.capa);
+    const bg = capaUrl || j.screenshots[0];
     const sc = hasScore(j), quero = isQuero(j);
     const meta = [];
     if (j.generos.length) meta.push(`<li>${ic('gamepad')}<span class="gen">${j.generos.map(g => `<a href="#/genero/${enc(g)}">${esc(g)}</a>`).join('<i class="sl">/</i>')}</span></li>`);
@@ -414,7 +414,7 @@
     const pageUrl = location.href.split('#')[0] + '#/jogo/' + enc(j.id);
     const shareText = j.titulo + (sc ? ' — nota ' + nota(j.notas.final) + '/10' : '') + ' · ' + CFG.SITE_NAME;
 
-    app.innerHTML = `<section class="jhero">${bg ? `<img class="hero-bg${j.screenshots[0] ? '' : ' soft'}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
+    app.innerHTML = `<section class="jhero">${bg ? `<img class="hero-bg${capaUrl ? ' soft' : ''}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
       <div class="wrap jwrap">
         <div class="jinfo"><nav class="crumbs"><a href="#/">Início</a>${ic('chr')}<a href="#/resenhas">Resenhas</a>${ic('chr')}<span>${esc(j.titulo)}</span></nav>
           <h1>${esc(j.titulo)}</h1>${j.subtitulo ? `<div class="sub">${esc(j.subtitulo)}</div>` : ''}<ul class="jmeta">${meta.join('')}</ul>

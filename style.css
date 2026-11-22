@@ -281,7 +281,7 @@ html.no-fx .bar{width:var(--w);transition:none}
 /* ===================== PÁGINA DO JOGO ===================== */
 .jhero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:var(--panel)}
 .jhero .hero-bg{opacity:.85;object-position:center 30%}
-.jhero .hero-bg.soft{opacity:.6;filter:blur(3px)}
+.jhero .hero-bg.soft{opacity:.75;filter:blur(2px)}
 .jhero .hero-fade{background:linear-gradient(90deg,rgba(10,10,14,.94) 0%,rgba(10,10,14,.78) 32%,rgba(10,10,14,.3) 62%,rgba(10,10,14,.08) 100%),linear-gradient(0deg,rgba(10,10,14,.7) 0%,transparent 38%)}
 .jwrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:36px;align-items:stretch;height:520px;padding-top:30px;padding-bottom:0}
 .jinfo{display:flex;flex-direction:column;min-height:0}
