@@ -65,17 +65,25 @@
     return d.getDate() + ' de ' + MESES[d.getMonth()] + ', ' + d.getFullYear();
   }
   function flanc(s) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); if (!m) return '';
-    return (+m[3]) + ' de ' + MESES[+m[2] - 1] + ', ' + m[1];
+    const m = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(String(s || '')); if (!m) return '';
+    if (!m[2]) return m[1];
+    return (m[3] ? (+m[3]) + ' de ' : '') + MESES[+m[2] - 1] + (m[3] ? ', ' : ' de ') + m[1];
   }
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2800); }
   function setMeta(title, desc) {
     document.title = (title ? title + ' · ' + CFG.SITE_NAME : CFG.SITE_NAME + (CFG.TAGLINE ? ' · ' + CFG.TAGLINE : ''));
     const m = document.querySelector('meta[name=description]'); if (m) m.setAttribute('content', String(desc || CFG.DESCRICAO).slice(0, 160));
   }
+  let favEmoji = '🎮';
   function setFavicon(emoji) {
+    if (emoji) favEmoji = emoji;
     const f = document.getElementById('fav'); if (!f) return;
-    f.href = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`);
+    if (favEmoji === '🎮') { /* ícone neutro da marca: funciona com qualquer cor de destaque */
+      f.type = 'image/svg+xml'; f.href = 'favicon.svg';
+    } else {
+      f.type = 'image/svg+xml';
+      f.href = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${favEmoji}</text></svg>`);
+    }
   }
 
   /* ================= ícones ================= */
@@ -195,10 +203,21 @@
   function gtile(g, n) {
     return `<a class="gtile" href="#/genero/${enc(g)}">${gIcon(g)}<b>${esc(g)}</b><small>${n} ${n === 1 ? 'resenha' : 'resenhas'}</small></a>`;
   }
-  function scoreBox(j) {
+  function scoreBox(j, vazio) {
     const n = j.notas;
-    const rows = CRIT.filter(([k]) => n[k] != null).map(([k, l], i) => `<li style="--i:${i}"><span>${l}</span><b>${nota(n[k])}</b><i class="bar" style="--w:${n[k] * 10}%"></i></li>`).join('');
-    return `<aside class="scorebox"><div class="sb-lab">Minha nota</div><div class="sb-big">${cnt(n.final)}<small>/10</small></div>${rows ? `<ul>${rows}</ul>` : ''}${j.fraseDestaque ? `<q>“${esc(j.fraseDestaque)}”</q>` : ''}</aside>`;
+    /* sem nota: mantém o espaço com tudo zerado, para o layout ser sempre o mesmo */
+    const rows = CRIT.filter(([k]) => vazio || n[k] != null).map(([k, l], i) => `<li style="--i:${i}"><span>${l}</span><b>${vazio ? '0.0' : nota(n[k])}</b><i class="bar" style="--w:${vazio ? 0 : n[k] * 10}%"></i></li>`).join('');
+    return `<aside class="scorebox${vazio ? ' nil' : ''}"><div class="sb-lab">Minha nota</div><div class="sb-big">${vazio ? '0.0' : cnt(n.final)}<small>/10</small></div>${rows ? `<ul>${rows}</ul>` : ''}${vazio ? '<q>Ainda sem nota.</q>' : j.fraseDestaque ? `<q>“${esc(j.fraseDestaque)}”</q>` : ''}</aside>`;
+  }
+  /* ícones de marca (Font Awesome) para as plataformas que têm um; as outras viram texto */
+  const PLAT_FA = [[/^(pc|windows)\b/i, 'windows'], [/steam/i, 'steam'], [/playstation|^ps\s?\d|^psp|vita/i, 'playstation'], [/xbox/i, 'xbox'], [/switch/i, 'nintendo-switch'],
+    [/android/i, 'android'], [/^(ios|iphone|ipad|mac)/i, 'apple'], [/linux/i, 'linux']];
+  function platsHtml(list) {
+    const ico = new Map(), txt = [];
+    list.forEach(p => { const m = PLAT_FA.find(([re]) => re.test(p)); if (m) { if (!ico.has(m[1])) ico.set(m[1], []); ico.get(m[1]).push(p); } else txt.push(p); });
+    const mais = txt.length > 6 ? txt.length - 6 : 0;
+    return [...ico].map(([fa, ps]) => `<i class="fa-brands fa-${fa} pf" title="${esc(ps.join(', '))}" aria-label="${esc(ps.join(', '))}"></i>`).join('')
+      + (txt.length ? `<span class="ptxt">${esc(txt.slice(0, 6).join(' · '))}${mais ? ` <em title="${esc(txt.slice(6).join(', '))}">+${mais}</em>` : ''}</span>` : '');
   }
   const empty = (t, d) => `<div class="state"><h2>${esc(t)}</h2><p>${esc(d || '')}</p></div>`;
   const emptyBtn = (t, d, href, label) => `<div class="state"><h2>${esc(t)}</h2><p>${esc(d || '')}</p><a class="btn primary" href="${href}">${esc(label)}</a></div>`;
@@ -228,6 +247,7 @@
     s.setProperty('--on-acc', lum(t.acc) > .38 ? '#0a0a0e' : '#ffffff');
     s.setProperty('--on-acc2', lum(t.acc2) > .38 ? '#0a0a0e' : '#ffffff');
     try { localStorage.setItem('junigami:tema', JSON.stringify({ acc: t.acc, acc2: t.acc2 })); } catch (e) {}
+    setFavicon();
   }
 
   /* ================= cabeçalho / rodapé ================= */
@@ -377,14 +397,15 @@
     const capaUrl = safeUrl(j.capa);
     const sc = hasScore(j), quero = isQuero(j);
     const meta = [];
-    if (j.generos.length || j.classificacao) meta.push(`<li>${ic('gamepad')}${j.generos.map(g => `<a class="tagc" href="#/genero/${enc(g)}">${esc(g)}</a>`).join('')}${j.classificacao ? `<span class="cbadge" title="Classificação indicativa" style="--c:${CLASS_COLORS[j.classificacao] || '#999'}">${esc(j.classificacao)}</span>` : ''}</li>`);
-    if (j.lancamento) meta.push(`<li>${ic('cal')}${esc(flanc(j.lancamento))}</li>`);
-    if (j.desenvolvedora) meta.push(`<li>${ic('code')}${esc(j.desenvolvedora)}</li>`);
-    if (j.plataformas.length) meta.push(`<li>${ic('monitor')}${j.plataformas.map(p => `<span class="tagc">${esc(p)}</span>`).join('')}</li>`);
+    if (j.generos.length || j.classificacao) meta.push(`<li>${ic('gamepad')}<span class="gen">${j.generos.map(g => `<a href="#/genero/${enc(g)}">${esc(g)}</a>`).join('<i class="sl">/</i>')}</span>${j.classificacao ? `<span class="cbadge" title="Classificação indicativa" style="--c:${CLASS_COLORS[j.classificacao] || '#999'}">${esc(j.classificacao)}</span>` : ''}</li>`);
+    if (j.lancamento) meta.push(`<li>${ic('cal')}<span>${esc(flanc(j.lancamento))}</span></li>`);
+    if (j.desenvolvedora) meta.push(`<li>${ic('code')}<span class="lab">Desenvolvedora:</span> <b>${esc(j.desenvolvedora)}</b></li>`);
+    if (j.plataformas.length) meta.push(`<li class="plats">${ic('monitor')}<span class="lab">Plataformas:</span> ${platsHtml(j.plataformas)}</li>`);
 
     const RC = { 'Sim': 'rc-Sim', 'Talvez': 'rc-Talvez', 'Não': 'rc-Nao', 'Nunca': 'rc-Nunca', 'Nem morto': 'rc-Nem-morto' };
-    const stats = [['Status', chip(j.status)], ['Tempo de jogo', j.tempoJogo != null ? fnum(j.tempoJogo) + ' horas' : ''], ['Dificuldade', esc(j.dificuldade)], ['Replay', esc(j.replay)],
-      ['Recomendo', j.recomendo ? `<span class="${RC[j.recomendo] || ''}">${esc(j.recomendo)}</span>` : '']].filter(s => s[1]);
+    const stxt = s => s ? `<span style="color:${STATUS_COLORS[s] || 'inherit'}">${esc(s)}</span>` : '';
+    const stats = [['Status', stxt(j.status)], ['Tempo de jogo', j.tempoJogo != null ? fnum(j.tempoJogo) + ' horas' : ''], ['Dificuldade', esc(j.dificuldade)], ['Replay', esc(j.replay)],
+      ['Recomendo', j.recomendo ? `<span class="${RC[j.recomendo] || ''}">${esc(j.recomendo)}</span>` : '']];
     const shots = j.screenshots;
     const related = J().filter(x => x.id !== j.id && !isQuero(x) && x.generos.some(g => j.generos.includes(g))).sort(SORT.nota).slice(0, 5);
     const au = CFG.AUTHOR || {};
@@ -393,15 +414,15 @@
     const shareText = j.titulo + (sc ? ' — nota ' + nota(j.notas.final) + '/10' : '') + ' · ' + CFG.SITE_NAME;
 
     app.innerHTML = `<section class="jhero">${bg ? `<img class="hero-bg${j.screenshots[0] ? '' : ' soft'}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
-      <div class="wrap jwrap ${sc ? '' : 'noscore'}">
+      <div class="wrap jwrap">
         <div class="jinfo"><nav class="crumbs"><a href="#/">Início</a>${ic('chr')}<a href="#/resenhas">Resenhas</a>${ic('chr')}<span>${esc(j.titulo)}</span></nav>
-          <h1>${esc(j.titulo)}</h1>${j.subtitulo ? `<div class="sub">${esc(j.subtitulo)}</div>` : ''}<ul class="jmeta">${meta.join('')}</ul></div>
-        ${sc ? scoreBox(j) : ''}
+          <h1>${esc(j.titulo)}</h1>${j.subtitulo ? `<div class="sub">${esc(j.subtitulo)}</div>` : ''}<ul class="jmeta">${meta.join('')}</ul>
+          <div class="jstats">${stats.map(([l, v]) => `<div class="stat"><small>${l}</small><b>${v || '<span class="nil">—</span>'}</b></div>`).join('')}</div></div>
+        ${scoreBox(j, !sc)}
       </div></section>
       <div class="wrap jbody">
         <aside class="jside"><div class="jposter${capaUrl ? ' zoom' : ''}"${capaUrl ? ' data-zoom="1" role="button" tabindex="0" aria-label="Ampliar a capa"' : ''}>${pic(j.capa, j.titulo, 'p34')}${j.top10 ? `<span class="rank r${j.top10}">Top ${j.top10}</span>` : ''}</div></aside>
         <div class="jmain">
-          ${stats.length ? `<div class="stats">${stats.map(([l, v]) => `<div class="stat"><small>${l}</small><b>${v}</b></div>`).join('')}</div>` : ''}
           ${quero ? `<div class="wish">${ic('bookmark')}<span>Este jogo está na minha lista de desejos. Ainda não joguei, então não há nota nem resenha.</span></div>` : ''}
           ${j.sinopse ? `<section class="block"><h2>Sobre o jogo</h2><div class="prose">${paras(j.sinopse)}</div></section>` : ''}
           ${j.resenha ? `<section class="block"><h2>Minha experiência</h2><div class="prose">${paras(j.resenha)}</div></section>` : ''}
