@@ -16,7 +16,9 @@
     ABOUT: BASE.ABOUT || ['Este é o meu diário de jogos: um lugar para registrar o que joguei, o que quero jogar e, principalmente, o que eu realmente achei de cada um.', 'Aqui você encontra resenhas sinceras, notas por categoria e listas pessoais. Sem patrocínio e sem pressa: a opinião é só minha.'],
     SOCIAL: BASE.SOCIAL || {},
     PER_PAGE: BASE.PER_PAGE || 10,
-    HOME: Object.assign({ finalizados: true, ultimas: true, top10: true, generos: true }, BASE.HOME || {})
+    HOME: Object.assign({ finalizados: true, ultimas: true, top10: true, generos: true }, BASE.HOME || {}),
+    HERO: { qtd: 5, seg: 7 },
+    FUNDO: { url: '', modo: 'cobrir', escurecer: 60, tamanho: 0 }
   };
   const CFG = JSON.parse(JSON.stringify(DEF));
 
@@ -37,7 +39,21 @@
     const pp = Number(s.porPagina);
     CFG.PER_PAGE = pp >= 3 && pp <= 50 ? Math.round(pp) : DEF.PER_PAGE;
     CFG.HOME = Object.assign({}, DEF.HOME, s.home && typeof s.home === 'object' ? s.home : {});
+    const he = s.hero && typeof s.hero === 'object' ? s.hero : {}, lim = (v, mn, mx, d) => { v = Number(v); return v >= mn && v <= mx ? Math.round(v) : d; };
+    CFG.HERO = { qtd: lim(he.qtd, 1, 8, DEF.HERO.qtd), seg: lim(he.seg, 3, 30, DEF.HERO.seg) };
+    const fu = s.fundo && typeof s.fundo === 'object' ? s.fundo : {};
+    CFG.FUNDO = { url: typeof fu.url === 'string' ? fu.url.trim() : '', modo: fu.modo === 'repetir' ? 'repetir' : 'cobrir', escurecer: lim(fu.escurecer, 0, 90, DEF.FUNDO.escurecer), tamanho: lim(fu.tamanho, 0, 800, 0) };
+    applyFundo();
     setFavicon(CFG.ICONE);
+  }
+  /* imagem de fundo do site (única ou repetida) */
+  function applyFundo() {
+    const f = CFG.FUNDO, b = document.body, st = document.documentElement.style, u = /^https?:\/\//i.test(f.url) ? f.url : '';
+    if (!u) { b.classList.remove('has-bg', 'bg-repeat'); return; }
+    st.setProperty('--bgimg', 'url("' + u.replace(/"/g, '%22') + '")');
+    st.setProperty('--bgdim', String(f.escurecer / 100));
+    st.setProperty('--bgsize', f.modo === 'repetir' ? (f.tamanho > 0 ? f.tamanho + 'px' : 'auto') : 'cover');
+    b.classList.add('has-bg'); b.classList.toggle('bg-repeat', f.modo === 'repetir');
   }
 
   const app = document.getElementById('app');
@@ -299,21 +315,63 @@
     const fin = all.filter(finished).sort(byDate).slice(0, 16);
     const top10 = all.filter(j => j.top10).sort((a, b) => a.top10 - b.top10).slice(0, 10);
     const gens = genreStats().slice(0, 7);
-    const featCapa = safeUrl(feat.capa), bg = featCapa || feat.screenshots[0];
 
-    let html = `<div class="wrap">
-      <section class="hero">${bg ? `<img class="hero-bg${featCapa ? ' soft' : ''}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer">` : ''}<div class="hero-fade"></div>
-        <div class="hero-l"><span class="tag-feat">${feat.destaque ? 'Resenha em destaque' : hasReview(feat) ? 'Última resenha' : 'Em destaque'}</span>
-          <h1>${esc(feat.titulo)}</h1>${feat.subtitulo ? `<div class="sub">${esc(feat.subtitulo)}</div>` : ''}
-          <p>${esc(exc({ sinopse: feat.sinopse }, 190))}</p>
-          <a class="btn primary" href="${lnk(feat)}">${hasReview(feat) ? 'Ler resenha completa' : 'Ver detalhes'} ${ic('arr')}</a></div>
-        ${hasScore(feat) ? scoreBox(feat) : ''}
-      </section>`;
+    /* banner rotativo: o jogo em destaque + as resenhas mais recentes */
+    const hs = [feat];
+    [...reviews, ...played].forEach(j => { if (hs.length < CFG.HERO.qtd && !hs.includes(j)) hs.push(j); });
+    const hslide = (j, i) => {
+      const capaU = safeUrl(j.capa), bg = capaU || j.screenshots[0];
+      return `<article class="hslide${i ? '' : ' on'}"${i ? ' aria-hidden="true"' : ''}>${bg ? `<img class="hero-bg${capaU ? ' soft' : ''}" src="${esc(bg)}" alt="" referrerpolicy="no-referrer"${i ? ' loading="lazy"' : ''}>` : ''}<div class="hero-fade"></div>
+        <div class="wrap jwrap"><div class="jinfo hinfo">
+          <span class="tag-feat" style="--k:0">${j.destaque ? 'Resenha em destaque' : hasReview(j) ? 'Resenha recente' : 'Em destaque'}</span>
+          <h1 style="--k:1"><a href="${lnk(j)}">${esc(j.titulo)}</a></h1>${j.subtitulo ? `<div class="sub" style="--k:2">${esc(j.subtitulo)}</div>` : ''}
+          <p style="--k:3">${esc(exc({ sinopse: j.sinopse }, 200))}</p>
+          <div class="hact" style="--k:4"><a class="btn primary" href="${lnk(j)}">${hasReview(j) ? 'Ler resenha completa' : 'Ver detalhes'} ${ic('arr')}</a></div>
+        </div>${scoreBox(j, !hasScore(j))}</div></article>`;
+    };
+    const heroHtml = `<section class="jhero hhero" aria-roledescription="carousel" aria-label="Destaques" tabindex="-1"><div class="hslides">${hs.map(hslide).join('')}</div>
+      ${hs.length > 1 ? `<div class="wrap hctl"><button class="hnav" type="button" data-d="-1" aria-label="Anterior">‹</button>
+        <div class="hdots">${hs.map((j, i) => `<button class="hdot${i ? '' : ' on'}" type="button" data-i="${i}" aria-label="${esc(j.titulo)}" title="${esc(j.titulo)}"><i></i></button>`).join('')}</div>
+        <button class="hnav" type="button" data-d="1" aria-label="Próximo">›</button><span class="hcount" aria-live="off">1 / ${hs.length}</span></div>` : ''}</section>`;
+
+    let html = heroHtml + `<div class="wrap">`;
     if (H.finalizados !== false && fin.length) html += sec('Jogos que passaram pelo controle', 'gamepad', '#/listas/finalizados', rail(fin));
     if (H.ultimas !== false && reviews.length) html += sec('Últimas resenhas', 'pen', '#/resenhas', `<div class="rgrid">${reviews.slice(0, 4).map(rcard).join('')}</div>`, 'Ver todas as resenhas');
     if (H.top10 !== false && top10.length) html += sec('Meu Top 10', 'trophy', '#/listas/top10', rail(top10, true));
     if (H.generos !== false && gens.length) html += sec('Navegue por gênero', 'gamepad', '#/generos', `<div class="gtiles">${gens.map(([g, n]) => gtile(g, n)).join('')}</div>`);
     app.innerHTML = html + '</div>';
+    initHero(app);
+  }
+
+  /* controles do banner: pontos com barra de tempo, setas, deslizar e teclado */
+  function initHero(root) {
+    const el = $('.hhero', root); if (!el) return;
+    const sl = $$('.hslide', el), dots = $$('.hdot', el), n = sl.length, cnt = $('.hcount', el);
+    const show = s => { const sb = $('.scorebox', s); if (!sb) return; sb.classList.remove('in'); void sb.offsetWidth; sb.classList.add('in'); $$('[data-count]', sb).forEach(countUp); };
+    show(sl[0]);
+    if (n < 2) return;
+    el.style.setProperty('--hdur', CFG.HERO.seg + 's');
+    if (REDUCED) el.classList.add('manual');
+    let cur = 0;
+    function go(i) {
+      i = (i + n) % n;
+      sl[cur].classList.remove('on'); sl[cur].setAttribute('aria-hidden', 'true'); dots[cur].classList.remove('on');
+      cur = i;
+      sl[cur].classList.add('on'); sl[cur].removeAttribute('aria-hidden');
+      void dots[cur].offsetWidth; dots[cur].classList.add('on');
+      if (cnt) cnt.textContent = (cur + 1) + ' / ' + n;
+      show(sl[cur]);
+    }
+    dots.forEach(d => { d.onclick = () => go(+d.dataset.i); d.addEventListener('animationend', e => { if (e.animationName === 'hprog' && d.classList.contains('on')) go(cur + 1); }); });
+    $$('.hnav', el).forEach(b => { b.onclick = () => go(cur + Number(b.dataset.d)); });
+    el.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') go(cur - 1); else if (e.key === 'ArrowRight') go(cur + 1); });
+    let x0 = null;
+    el.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') x0 = e.clientX; });
+    el.addEventListener('pointerup', e => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 50) go(cur + (dx < 0 ? 1 : -1)); });
+    /* pausa quando a aba está oculta ou o banner saiu da tela */
+    const hold = on => el.classList.toggle('hold', on);
+    document.addEventListener('visibilitychange', () => hold(document.hidden));
+    if ('IntersectionObserver' in window) new IntersectionObserver(es => hold(!es[0].isIntersecting), { threshold: .2 }).observe(el);
   }
 
   function listPage(q, fixedGen) {
@@ -517,7 +575,7 @@
       if (el.classList.contains('reveal')) return;
       el.classList.add('reveal'); el.style.setProperty('--d', (i++ % 7) * 65 + 'ms'); IO.observe(el);
     });
-    $$('.scorebox,[data-count]', root).forEach(el => IO.observe(el));
+    $$('.scorebox,[data-count]', root).filter(el => !el.closest('.hslide')).forEach(el => IO.observe(el));
   }
   function markImgs(root) {
     $$('.pic img', root || app).forEach(i => { if (i.complete && i.naturalWidth) i.classList.add('loaded'); });
@@ -589,7 +647,7 @@
       progEl.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, y / h).toFixed(4) : 0) + ')';
       $('#header').classList.toggle('scrolled', y > 12);
       $('#toTop').classList.toggle('show', y > 600);
-      if (!REDUCED) { const bg = app.querySelector('.hero-bg'); if (bg && y < 1400) bg.style.translate = '0 ' + (y * .14).toFixed(1) + 'px'; }
+      if (!REDUCED && y < 1400) { const t = '0 ' + (y * .14).toFixed(1) + 'px'; app.querySelectorAll('.hero-bg').forEach(bg => { bg.style.translate = t; }); }
     });
   }
   window.addEventListener('scroll', onScroll, { passive: true });
